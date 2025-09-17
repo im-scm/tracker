@@ -1,193 +1,241 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <script>
-document.addEventListener("DOMContentLoaded", function() {
-    var senha = prompt("Digite a senha para acessar:");
-    if (senha !== "impress") {
-        alert("Senha incorreta. Você não pode acessar esta página.");
-        document.body.innerHTML = ""; // Esconde o conteúdo
-    }
-});
-</script>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Painel de Inteligência de Compras - Impress Decor</title>
-
-    <link rel="stylesheet" href="style.css" />
-    <link rel="icon" href="im.ico" type="image/x-icon" />
-
-    <!-- Bibliotecas de terceiros -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-    <!-- Seu script principal -->
-    <script src="app.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Monitoramento - SCM Impress Decor</title>
+    <link rel="icon" href="im.ico" type="image/x-icon" /> 
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+    <!-- Header -->
     <div class="container">
-        <!-- Cabeçalho -->
         <header class="header">
             <div class="header-content">
-                <h1>Painel de Inteligência de Compras - Impress Decor</h1>
-                <div class="logo-container">
-                    <img
-                        src="impress_logo.jpg"
-                        alt="Impress Decor Logo"
-                        class="company-logo"
-                        onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYwIiB2aWV3Qm94PSIwIDAgMTIwIDYwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iNjAiIGZpbGw9IiNCMzRBM0EiIHJ4PSI4Ii8+PHRleHQgeD0iNjAiIHk9IjI1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCI+SW1wcmVzczwvdGV4dD48dGV4dCB4PSI2MCIgeT0iNDIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiPkRlY29yPC90ZXh0Pjwvc3ZnPg=='"
-                    />
-                </div>
+                <h1>Dashboard de Monitoramento - SCM Impress Decor v2.2.2</h1>
+                <!-- Logo removido temporariamente para evitar erro 404 -->
+                <!-- <img src="impress_logo.jpg" alt="Impress Decor" class="company-logo"> -->
             </div>
         </header>
 
-        <!-- Filtros de Data + Upload -->
-        <section class="filters-section">
+        <!-- Seção de Filtros e Upload -->
+        <div class="filters-section">
             <div class="date-filters">
                 <div class="filter-group">
-                    <label for="startDate" class="form-label">Data Início:</label>
-                    <input
-                        type="text"
-                        id="startDate"
-                        class="form-control date-input"
-                        placeholder="01/01/2025"
-                        autocomplete="off"
-                        spellcheck="false"
-                    />
+                    <label for="startDate" class="form-label">Data Inicial</label>
+                    <input type="text" id="startDate" class="form-control date-input" placeholder="dd/mm/aaaa">
                 </div>
                 <div class="filter-group">
-                    <label for="endDate" class="form-label">Data Fim:</label>
-                    <input
-                        type="text"
-                        id="endDate"
-                        class="form-control date-input"
-                        placeholder="31/12/2025"
-                        autocomplete="off"
-                        spellcheck="false"
-                    />
+                    <label for="endDate" class="form-label">Data Final</label>
+                    <input type="text" id="endDate" class="form-control date-input" placeholder="dd/mm/aaaa">
                 </div>
             </div>
 
             <div class="upload-section">
                 <div class="upload-controls">
-                    <button
-                        id="uploadBtn"
-                        class="upload-btn"
-                        type="button"
-                        title="Clique para selecionar arquivo Excel"
-                    >
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
                         <span class="upload-icon">📁</span>
                         <span class="upload-text">Upload Excel</span>
                     </button>
-                    <div id="uploadZone" class="upload-zone" title="Arraste arquivos Excel aqui">
-                        <span class="drag-text">Ou arraste arquivos aqui</span>
+                    <div class="upload-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" ondragenter="dragEnterHandler(event);" ondragleave="dragLeaveHandler(event);">
+                        <span class="drag-text">Arraste aqui</span>
                     </div>
                 </div>
-                <div id="lastUploadInfo" class="upload-info">Último upload: Dados de exemplo</div>
-                <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none" />
+                <div class="upload-info">Formatos aceitos: .xlsx, .xls</div>
             </div>
-        </section>
+        </div>
 
-        <!-- Upload status feedback -->
+        <!-- Status do Upload -->
         <div id="uploadStatus" class="upload-status hidden"></div>
 
-        <!-- KPI Boxes -->
+        <!-- Input de arquivo oculto -->
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;" onchange="handleFileSelect(event)">
+
+        <!-- Seção de KPIs CORRIGIDA -->
         <section class="kpi-section">
-            <h2 id="priceTitle">Preços - Última atualização: --</h2>
+            <h2>Indicadores Principais</h2>
             <div class="kpi-boxes">
-                <!-- KPI box templates (5 boxes) -->
+                <!-- Celulose -->
                 <div class="kpi-box">
-                    <div class="kpi-header"><h3>Celulose</h3></div>
-                    <div class="kpi-values">
+                    <div class="kpi-header">
+                        <h3>Celulose</h3>
+                    </div>
+                    <div class="kpi-values" id="celuloseKPI">
                         <div class="kpi-item">
-                            <span class="currency"></span><span class="value" id="celulose-eur">--</span>
+                            <span class="currency">EUR</span>
+                            <span class="value">--</span>
                         </div>
                         <div class="kpi-item">
-                            <span class="currency"></span><span class="value" id="celulose-usd">--</span>
+                            <span class="currency">USD</span>
+                            <span class="value">--</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- TiO2 -->
                 <div class="kpi-box">
-                    <div class="kpi-header"><h3>Dióxido de Titânio</h3></div>
-                    <div class="kpi-values">
+                    <div class="kpi-header">
+                        <h3>TiO2</h3>
+                    </div>
+                    <div class="kpi-values" id="tio2KPI">
                         <div class="kpi-item">
-                            <span class="currency"></span><span class="value" id="tio2-eur">--</span>
+                            <span class="currency">EUR</span>
+                            <span class="value">--</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- Resinas -->
                 <div class="kpi-box">
-                    <div class="kpi-header"><h3>Resinas</h3></div>
-                    <div class="kpi-values">
+                    <div class="kpi-header">
+                        <h3>Resinas</h3>
+                    </div>
+                    <div class="kpi-values" id="resinasKPI">
                         <div class="kpi-item">
-                            <span class="currency">UF</span><span class="value" id="resina-uf">--</span>
+                            <span class="currency">UF</span>
+                            <span class="value">--</span>
                         </div>
                         <div class="kpi-item">
-                            <span class="currency">MF</span><span class="value" id="resina-mf">--</span>
+                            <span class="currency">MF</span>
+                            <span class="value">--</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- Frete Importação (CORRIGIDO - era Câmbio) -->
                 <div class="kpi-box">
-                    <div class="kpi-header"><h3>Frete Importação</h3></div>
-                    <div class="kpi-values">
+                    <div class="kpi-header">
+                        <h3>Frete Import</h3>
+                    </div>
+                    <div class="kpi-values" id="freteImportKPI">
                         <div class="kpi-item">
-                            <span class="currency">Europa</span><span class="value" id="cnt-eu">--</span>
+                            <span class="currency">Europa</span>
+                            <span class="value">--</span>
                         </div>
                         <div class="kpi-item">
-                            <span class="currency">China</span><span class="value" id="cnt-cn">--</span>
+                            <span class="currency">China</span>
+                            <span class="value">--</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- Frete Exportação (CORRIGIDO - era Frete) -->
                 <div class="kpi-box">
-                    <div class="kpi-header"><h3>Frete Exportação</h3></div>
-                    <div class="kpi-values">
+                    <div class="kpi-header">
+                        <h3>Frete Export</h3>
+                    </div>
+                    <div class="kpi-values" id="freteExportKPI">
                         <div class="kpi-item">
-                            <span class="currency">GQ</span><span class="value" id="cnt-gq">--</span>
+                            <span class="currency">CG</span>
+                            <span class="value">--</span>
                         </div>
                         <div class="kpi-item">
-                            <span class="currency">CG</span><span class="value" id="cnt-cg">--</span>
-                        </div>
-                        <div class="kpi-item">
-                            <span class="currency">VC</span><span class="value" id="cnt-vc">--</span>
+                            <span class="currency">GQ</span>
+                            <span class="value">--</span>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Charts -->
+        <!-- Seção de Gráficos -->
         <section class="charts-section">
+            <!-- Celulose -->
             <div class="chart-container">
                 <h3>Celulose</h3>
-                <div class="chart-wrapper"><canvas id="celuloseChart"></canvas></div>
+                <div class="chart-row">
+                    <div class="chart-wrapper">
+                        <canvas id="celuloseChart"></canvas>
+                    </div>
+                    <div class="metrics-box" id="celuloseMetrics">
+                        <!-- Métricas serão inseridas dinamicamente -->
+                    </div>
+                </div>
             </div>
+
+            <!-- TiO2 -->
             <div class="chart-container">
-                <h3>Dióxido de Titânio</h3>
-                <div class="chart-wrapper"><canvas id="tio2Chart"></canvas></div>
+                <h3>TiO2</h3>
+                <div class="chart-row">
+                    <div class="chart-wrapper">
+                        <canvas id="tio2Chart"></canvas>
+                    </div>
+                    <div class="metrics-box" id="tio2Metrics">
+                        <!-- Métricas serão inseridas dinamicamente -->
+                    </div>
+                </div>
             </div>
+
+            <!-- Insumos -->
             <div class="chart-container">
-                <h3>Insumos para Resinas</h3>
-                <div class="chart-wrapper"><canvas id="insumosChart"></canvas></div>
+                <h3>Insumos</h3>
+                <div class="chart-row">
+                    <div class="chart-wrapper">
+                        <canvas id="insumosChart"></canvas>
+                    </div>
+                    <div class="metrics-box" id="insumosMetrics">
+                        <!-- Métricas serão inseridas dinamicamente -->
+                    </div>
+                </div>
             </div>
+
+            <!-- Resinas -->
             <div class="chart-container">
-                <h3>Resinas Prontas</h3>
-                <div class="chart-wrapper"><canvas id="resinasChart"></canvas></div>
+                <h3>Resinas</h3>
+                <div class="chart-row">
+                    <div class="chart-wrapper">
+                        <canvas id="resinasChart"></canvas>
+                    </div>
+                    <div class="metrics-box" id="resinasMetrics">
+                        <!-- Métricas serão inseridas dinamicamente -->
+                    </div>
+                </div>
             </div>
+
+            <!-- Moedas/Câmbio -->
             <div class="chart-container">
-                <h3>Moedas</h3>
-                <div class="chart-wrapper"><canvas id="moedasChart"></canvas></div>
+                <h3>Câmbio</h3>
+                <div class="chart-row">
+                    <div class="chart-wrapper">
+                        <canvas id="moedasChart"></canvas>
+                    </div>
+                    <div class="metrics-box" id="moedasMetrics">
+                        <!-- Métricas serão inseridas dinamicamente -->
+                    </div>
+                </div>
             </div>
+
+            <!-- Frete Importação -->
             <div class="chart-container">
                 <h3>Frete Importação</h3>
-                <div class="chart-wrapper"><canvas id="freteImportChart"></canvas></div>
+                <div class="chart-row">
+                    <div class="chart-wrapper">
+                        <canvas id="freteImportChart"></canvas>
+                    </div>
+                    <div class="metrics-box" id="freteimportMetrics">
+                        <!-- Métricas serão inseridas dinamicamente -->
+                    </div>
+                </div>
             </div>
+
+            <!-- Frete Exportação -->
             <div class="chart-container">
                 <h3>Frete Exportação</h3>
-                <div class="chart-wrapper"><canvas id="freteExportChart"></canvas></div>
+                <div class="chart-row">
+                    <div class="chart-wrapper">
+                        <canvas id="freteExportChart"></canvas>
+                    </div>
+                    <div class="metrics-box" id="freteexportMetrics">
+                        <!-- Métricas serão inseridas dinamicamente -->
+                    </div>
+                </div>
             </div>
         </section>
     </div>
+
+    <!-- Script principal -->
+    <script src="app.js"></script>
 </body>
 </html>

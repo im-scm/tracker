@@ -44,8 +44,7 @@ const sampleData = [
         CNT_GQ_USD: "3.340,25",
         CNT_CG_USD: "3.265,80",
         CNT_VC_USD: "4.790,50"
-    },
-    // ... outras entradas ...
+    }
 ];
 
 // NYRIA 2025 colors
@@ -60,8 +59,42 @@ const chartColors = {
     beige: '#F5F5DC'
 };
 
-// --- Funções auxiliares ---
+// Configuração das séries para cada gráfico - COM LABELS CORRIGIDOS E EIXOS DEFINIDOS
+const chartSeriesConfig = {
+    'celulose': [
+        { field: 'Celulose_USD', label: 'USD', color: '#CD853F', yAxisID: 'y' },  // Eixo primário
+        { field: 'Celulose_EUR', label: 'EUR', color: '#B34A3A', yAxisID: 'y1' }  // Eixo secundário
+    ],
+    'tio2': [
+        { field: 'TIO2_EUR', label: 'TIO2', color: '#4A148C', yAxisID: 'y' }
+    ],
+    'insumos': [
+        { field: 'Ureia_USD', label: 'URE', color: '#6B8E23', yAxisID: 'y' },      // Eixo primário
+        { field: 'Metanol_USD', label: 'MET', color: '#708090', yAxisID: 'y' },    // Eixo primário
+        { field: 'Melamina_USD', label: 'MEL', color: '#8B4513', yAxisID: 'y1' }   // Eixo secundário
+    ],
+    'resinas': [
+        { field: 'Resina_UF_BRL', label: 'UF', color: '#B34A3A', yAxisID: 'y' },   // Eixo primário
+        { field: 'Resina_MF_BRL', label: 'MF', color: '#8B4513', yAxisID: 'y' },   // Eixo primário
+        { field: 'USDBRL_GPC', label: 'USD', color: '#4A148C', yAxisID: 'y1' }     // Eixo secundário
+    ],
+    'moedas': [
+        { field: 'USDBRL', label: 'USD', color: '#708090', yAxisID: 'y' },         // Eixo primário
+        { field: 'EURBRL', label: 'EUR', color: '#B34A3A', yAxisID: 'y' },         // Eixo primário
+        { field: 'CNYBRL', label: 'CNY', color: '#CD853F', yAxisID: 'y1' }         // Eixo secundário
+    ],
+    'freteimport': [
+        { field: 'CNT_EU_EUR', label: 'EU', color: '#4A148C', yAxisID: 'y' },   // Eixo primário
+        { field: 'CNT_CN_USD', label: 'CN', color: '#8B4513', yAxisID: 'y1' }    // Eixo secundário
+    ],
+    'freteexport': [
+        { field: 'CNT_GQ_USD', label: 'GQ', color: '#6B8E23', yAxisID: 'y' },
+        { field: 'CNT_CG_USD', label: 'CG', color: '#8B4513', yAxisID: 'y' },
+        { field: 'CNT_VC_USD', label: 'VC', color: '#B34A3A', yAxisID: 'y' }
+    ]
+};
 
+// --- Funções auxiliares ---
 function parseBrazilianNumber(value) {
     if (typeof value === 'number') return value;
     if (typeof value === 'string') {
@@ -117,12 +150,16 @@ function parseDateBR(dateStr) {
     const pattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
     const match = cleaned.match(pattern);
     if (!match) return null;
+
     const day = parseInt(match[1], 10);
     const month = parseInt(match[2], 10);
     const year = parseInt(match[3], 10);
+
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) return null;
+
     const date = new Date(year, month - 1, day);
     if (date.getDate() !== day || date.getMonth() !== (month - 1) || date.getFullYear() !== year) return null;
+
     return date;
 }
 
@@ -133,7 +170,10 @@ function validateDateInput(input) {
 
 function formatNumber(value) {
     if (typeof value !== 'number' || isNaN(value)) return '--';
-    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return value.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
 }
 
 function formatCurrency(value, currency = '') {
@@ -143,21 +183,27 @@ function formatCurrency(value, currency = '') {
 
 function processData(rawData) {
     console.log('Processing data - inicial:', rawData.length, 'registros');
+
     const processedData = rawData.map((row, index) => {
         const processed = { ...row };
         processed.Data = parseLocalDate(processed.Data);
+
         Object.keys(processed).forEach(key => {
             if (key !== 'Data') {
                 const originalValue = processed[key];
                 processed[key] = parseBrazilianNumber(processed[key]);
+
                 if (key === 'TIO2_EUR') {
                     console.log(`Linha ${index}: TIO2_EUR - Original: "${originalValue}" -> Processado: ${processed[key]}`);
                 }
             }
         });
+
         return processed;
     }).filter(row => row.Data && row.Data instanceof Date && !isNaN(row.Data.getTime()));
+
     processedData.sort((a, b) => a.Data - b.Data);
+
     console.log('Processing data - final:', processedData.length, 'registros válidos');
     return processedData;
 }
@@ -170,561 +216,523 @@ function filterDataByDate(data, startDate, endDate) {
     });
 }
 
-// --- Funções principais do Dashboard ---
-
-function createLineChart(canvasId, datasets, scales = null) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    const labels = filteredData.map(d => formatDateBR(d.Data));
-    if (charts[canvasId]) {
-        charts[canvasId].destroy();
-    }
-    const defaultScales = { y: { title: { display: true, text: 'Valor' } } };
-    const config = {
-        type: 'line',
-        data: { labels, datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        title: ctx => {
-                            const index = ctx[0].dataIndex;
-                            return formatDateBR(filteredData[index].Data);
-                        }
-                    }
-                }
-            },
-            scales: scales || defaultScales
-        }
-    };
-    charts[canvasId] = new Chart(ctx, config);
+// --- Funções de cálculo de métricas ---
+function calculatePercentageChange(oldValue, newValue) {
+    if (!oldValue || oldValue === 0) return 0;
+    return ((newValue - oldValue) / oldValue) * 100;
 }
 
-function createAllCharts() {
+function formatPercentage(value, showSign = true) {
+    if (typeof value !== 'number' || isNaN(value)) return '--';
+    const formatted = Math.abs(value).toFixed(1) + '%';
+    const sign = value > 0 ? '+' : (value < 0 ? '-' : '');
+    return showSign ? sign + formatted : formatted;
+}
+
+function getMetricClass(value) {
+    if (typeof value !== 'number' || isNaN(value)) return 'neutral';
+    if (value > 0) return 'positive';
+    if (value < 0) return 'negative';
+    return 'neutral';
+}
+
+// FUNÇÃO CORRIGIDA PARA TODOS OS DADOS (ESPECIALMENTE FRETE)
+function calculatePeriodMetrics(data, field) {
+    if (!data || data.length === 0) return { period: null, ytd: null, mom: null };
+
+    // Filtrar dados válidos (não nulos/undefined/zero/string vazia) para o campo específico
+    const validData = data.filter(row => {
+        const value = row[field];
+        return value !== null && value !== undefined && value !== 0 && !isNaN(value) && value !== '';
+    });
+
+    if (validData.length === 0) return { period: null, ytd: null, mom: null };
+
+    // Período: primeiro vs último do filtro (dados válidos)
+    const firstValue = validData[0][field];
+    const lastValue = validData[validData.length - 1][field];
+    const period = calculatePercentageChange(firstValue, lastValue);
+
+    // YTD: primeiro valor do ano corrente vs último valor (dados válidos)
+    const currentYear = new Date().getFullYear();
+    const ytdData = validData.filter(d => d.Data.getFullYear() === currentYear);
+    let ytd = null;
+    if (ytdData.length > 1) {
+        const firstYtdValue = ytdData[0][field];
+        const lastYtdValue = ytdData[ytdData.length - 1][field];
+        ytd = calculatePercentageChange(firstYtdValue, lastYtdValue);
+    }
+
+    // MOM: penúltimo vs último valor (dados válidos)
+    let mom = null;
+    if (validData.length > 1) {
+        const secondLastValue = validData[validData.length - 2][field];
+        mom = calculatePercentageChange(secondLastValue, lastValue);
+    }
+
+    return { period, ytd, mom };
+}
+
+// ORDEM DAS MÉTRICAS CORRIGIDA: MOM, YTD, ALL
+const metricsOrder = [
+    { key: 'mom', label: 'MOM' },
+    { key: 'ytd', label: 'YTD' },
+    { key: 'period', label: 'ALL' }
+];
+
+function updateChartMetrics(chartType) {
     if (filteredData.length === 0) return;
-    console.log('Criando gráficos com', filteredData.length, 'registros');
 
-    createLineChart('celuloseChart', [
-        {
-            label: 'Celulose EUR (€)',
-            data: filteredData.map(d => d.Celulose_EUR),
-            borderColor: chartColors.terracotta,
-            backgroundColor: chartColors.terracotta + '30',
-            yAxisID: 'y',
-            tension: 0.1
-        },
-        {
-            label: 'Celulose USD ($)',
-            data: filteredData.map(d => d.Celulose_USD),
-            borderColor: chartColors.terracottaLight,
-            backgroundColor: chartColors.terracottaLight + '30',
-            yAxisID: 'y1',
-            tension: 0.1
-        }
-    ], {
-        y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: { display: true, text: 'EUR (€)', color: chartColors.terracotta },
-            ticks: { color: chartColors.terracotta }
-        },
-        y1: {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: { display: true, text: 'USD ($)', color: chartColors.terracottaLight },
-            ticks: { color: chartColors.terracottaLight },
-            grid: { drawOnChartArea: false }
-        }
+    const seriesConfig = chartSeriesConfig[chartType];
+    if (!seriesConfig) return;
+
+    // Limpar o container de métricas
+    const metricsContainer = document.getElementById(`${chartType}Metrics`);
+    if (!metricsContainer) return;
+
+    // Criar HTML para múltiplas séries
+    let metricsHTML = '';
+
+    // Header com os nomes das séries
+    metricsHTML += '<div class="metrics-header">';
+    metricsHTML += '<div></div>';
+    seriesConfig.forEach(series => {
+        metricsHTML += `<div class="series-header">${series.label}</div>`;
+    });
+    metricsHTML += '</div>';
+
+    // Métricas para cada tipo (MOM, YTD, ALL)
+    metricsOrder.forEach(metricType => {
+        metricsHTML += '<div class="metric-row">';
+        metricsHTML += `<div class="metric-row-label">${metricType.label}</div>`;
+
+        seriesConfig.forEach(series => {
+            const metrics = calculatePeriodMetrics(filteredData, series.field);
+            const value = metrics[metricType.key];
+            const formattedValue = formatPercentage(value);
+            const cssClass = getMetricClass(value);
+
+            metricsHTML += `<div class="metric-cell">`;
+            metricsHTML += `<span class="metric-value ${cssClass}">${formattedValue}</span>`;
+            metricsHTML += '</div>';
+        });
+
+        metricsHTML += '</div>';
     });
 
-    const tio2Data = filteredData.map(d => d.TIO2_EUR);
-    createLineChart('tio2Chart', [{
-        label: 'TIO2 EUR (€)',
-        data: tio2Data,
-        borderColor: chartColors.violet,
-        backgroundColor: chartColors.violet + '30',
-        tension: 0.1
-    }]);
+    metricsContainer.innerHTML = metricsHTML;
 
-    createLineChart('insumosChart', [
-        {
-            label: 'Melamina USD ($)',
-            data: filteredData.map(d => d.Melamina_USD),
-            borderColor: chartColors.brown,
-            backgroundColor: chartColors.brown + '30',
-            tension: 0.1
-        },
-        {
-            label: 'Ureia USD ($)',
-            data: filteredData.map(d => d.Ureia_USD),
-            borderColor: chartColors.olive,
-            backgroundColor: chartColors.olive + '30',
-            tension: 0.1
-        },
-        {
-            label: 'Metanol USD ($)',
-            data: filteredData.map(d => d.Metanol_USD),
-            borderColor: chartColors.stone,
-            backgroundColor: chartColors.stone + '30',
-            tension: 0.1
-        }
-    ]);
-
-    createLineChart('resinasChart', [
-        {
-            label: 'Resina UF BRL (R$)',
-            data: filteredData.map(d => d.Resina_UF_BRL),
-            borderColor: chartColors.terracotta,
-            backgroundColor: chartColors.terracotta + '30',
-            yAxisID: 'y',
-            tension: 0.1
-        },
-        {
-            label: 'Resina MF BRL (R$)',
-            data: filteredData.map(d => d.Resina_MF_BRL),
-            borderColor: chartColors.brown,
-            backgroundColor: chartColors.brown + '30',
-            yAxisID: 'y',
-            tension: 0.1
-        },
-        {
-            label: 'USDBRL_GPC',
-            data: filteredData.map(d => d.USDBRL_GPC),
-            borderColor: chartColors.violet,
-            backgroundColor: chartColors.violet + '30',
-            yAxisID: 'y1',
-            tension: 0.1,
-            borderDash: [5, 5]
-        }
-    ], {
-        y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: { display: true, text: 'BRL (R$)', color: chartColors.terracotta },
-            ticks: { color: chartColors.terracotta }
-        },
-        y1: {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: { display: true, text: 'USDBRL_GPC', color: chartColors.violet },
-            ticks: { color: chartColors.violet },
-            grid: { drawOnChartArea: false }
-        }
-    });
-
-    createLineChart('moedasChart', [
-        {
-            label: 'USDBRL',
-            data: filteredData.map(d => d.USDBRL),
-            borderColor: chartColors.stone,
-            backgroundColor: chartColors.stone + '30',
-            yAxisID: 'y',
-            tension: 0.1
-        },
-        {
-            label: 'EURBRL',
-            data: filteredData.map(d => d.EURBRL),
-            borderColor: chartColors.terracotta,
-            backgroundColor: chartColors.terracotta + '30',
-            yAxisID: 'y',
-            tension: 0.1
-        },
-        {
-            label: 'USDBRL_GPC',
-            data: filteredData.map(d => d.USDBRL_GPC),
-            borderColor: chartColors.violet,
-            backgroundColor: chartColors.violet + '30',
-            yAxisID: 'y',
-            tension: 0.1,
-            hidden: true
-        },
-        {
-            label: 'CNYBRL',
-            data: filteredData.map(d => d.CNYBRL),
-            borderColor: chartColors.terracottaLight,
-            backgroundColor: chartColors.terracottaLight + '30',
-            yAxisID: 'y1',
-            tension: 0.1
-        }
-    ], {
-        y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: { display: true, text: 'USD/EUR BRL', color: chartColors.stone },
-            ticks: { color: chartColors.stone }
-        },
-        y1: {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: { display: true, text: 'CNY BRL', color: chartColors.terracottaLight },
-            ticks: { color: chartColors.terracottaLight },
-            grid: { drawOnChartArea: false }
-        }
-    });
-
-    createLineChart('freteImportChart', [
-        {
-            label: 'CNT Europa EUR (€)',
-            data: filteredData.map(d => d.CNT_EU_EUR),
-            borderColor: chartColors.violet,
-            backgroundColor: chartColors.violet + '30',
-            yAxisID: 'y',
-            tension: 0.1
-        },
-        {
-            label: 'CNT China USD ($)',
-            data: filteredData.map(d => d.CNT_CN_USD),
-            borderColor: chartColors.brown,
-            backgroundColor: chartColors.brown + '30',
-            yAxisID: 'y1',
-            tension: 0.1
-        }
-    ], {
-        y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: { display: true, text: 'EUR (€)', color: chartColors.violet },
-            ticks: { color: chartColors.violet }
-        },
-        y1: {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: { display: true, text: 'USD ($)', color: chartColors.brown },
-            ticks: { color: chartColors.brown },
-            grid: { drawOnChartArea: false }
-        }
-    });
-
-    createLineChart('freteExportChart', [
-        {
-            label: 'CNT GQ USD ($)',
-            data: filteredData.map(d => d.CNT_GQ_USD),
-            borderColor: chartColors.olive,
-            backgroundColor: chartColors.olive + '30',
-            tension: 0.1
-        },
-        {
-            label: 'CNT CG USD ($)',
-            data: filteredData.map(d => d.CNT_CG_USD),
-            borderColor: chartColors.brown,
-            backgroundColor: chartColors.brown + '30',
-            tension: 0.1
-        },
-        {
-            label: 'CNT VC USD ($)',
-            data: filteredData.map(d => d.CNT_VC_USD),
-            borderColor: chartColors.terracotta,
-            backgroundColor: chartColors.terracotta + '30',
-            tension: 0.1
-        }
-    ]);
+    // Definir o atributo data-series para ajustar o layout
+    metricsContainer.setAttribute('data-series', seriesConfig.length);
 }
 
-function updateKPIBoxes() {
-    if (filteredData.length === 0) return;
-    const latest = filteredData[filteredData.length - 1];
-    const latestDate = formatDateBR(latest.Data);
-    console.log('Atualizando KPIs - TIO2_EUR valor:', latest.TIO2_EUR);
-
-    const priceTitle = document.getElementById('priceTitle');
-    if (priceTitle) {
-        priceTitle.textContent = `Preços - Última atualização: ${latestDate}`;
-    }
-
-    const kpiMappings = {
-        'celulose-eur': [latest.Celulose_EUR, '€'],
-        'celulose-usd': [latest.Celulose_USD, '$'],
-        'tio2-eur': [latest.TIO2_EUR, '€'],
-        'resina-uf': [latest.Resina_UF_BRL, 'R$'],
-        'resina-mf': [latest.Resina_MF_BRL, 'R$'],
-        'cnt-eu': [latest.CNT_EU_EUR, '€'],
-        'cnt-cn': [latest.CNT_CN_USD, '$'],
-        'cnt-gq': [latest.CNT_GQ_USD, '$'],
-        'cnt-cg': [latest.CNT_CG_USD, '$'],
-        'cnt-vc': [latest.CNT_VC_USD, '$']
-    };
-
-    Object.entries(kpiMappings).forEach(([id, [value, currency]]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = formatCurrency(value, currency);
-            if (id === 'tio2-eur') {
-                console.log(`KPI TIO2_EUR atualizado - Valor bruto: ${value}, Formatado: ${element.textContent}`);
-            }
-        }
-    });
-}
-
-function updateDateFilters() {
-    if (globalData.length === 0) return;
-    const dates = globalData.map(d => d.Data).filter(d => d instanceof Date);
-    if (dates.length === 0) return;
-
-    const minDate = new Date(Math.min(...dates));
-    const maxDate = new Date(Math.max(...dates));
-
-    const startDateInput = document.getElementById('startDate');
-    const endDateInput = document.getElementById('endDate');
-
-    if (startDateInput) startDateInput.value = formatDateBR(minDate);
-    if (endDateInput) endDateInput.value = formatDateBR(maxDate);
-}
-
-function showUploadStatus(message, type) {
-    const statusEl = document.getElementById('uploadStatus');
-    if (statusEl) {
-        statusEl.textContent = message;
-        statusEl.className = `upload-status ${type}`;
-        statusEl.classList.remove('hidden');
-        if (type === 'success') {
-            setTimeout(() => statusEl.classList.add('hidden'), 3000);
-        }
+// --- Funções de Upload e Manipulação de Arquivos ---
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        processFile(file);
     }
 }
 
-function updateLastUploadInfo() {
-    const infoEl = document.getElementById('lastUploadInfo');
-    if (infoEl) {
-        const now = new Date();
-        infoEl.textContent = `Último upload: ${formatDateBR(now)} às ${now.toLocaleTimeString('pt-BR')}`;
+function dropHandler(event) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        processFile(files[0]);
     }
+    event.target.classList.remove('dragover');
 }
 
-function updateDashboard() {
-    const startDateInput = document.getElementById('startDate');
-    const endDateInput = document.getElementById('endDate');
-
-    let startDate = null;
-    let endDate = null;
-
-    if (startDateInput && startDateInput.value) {
-        startDate = parseDateBR(startDateInput.value);
-        if (!startDate) {
-            showUploadStatus('Data de início inválida. Use o formato dd/mm/aaaa', 'error');
-            return;
-        }
-    }
-
-    if (endDateInput && endDateInput.value) {
-        endDate = parseDateBR(endDateInput.value);
-        if (!endDate) {
-            showUploadStatus('Data de fim inválida. Use o formato dd/mm/aaaa', 'error');
-            return;
-        }
-        endDate.setHours(23, 59, 59, 999);
-    }
-
-    filteredData = filterDataByDate(globalData, startDate, endDate);
-    console.log('Dashboard atualizado - registros filtrados:', filteredData.length);
-
-    updateKPIBoxes();
-
-    setTimeout(() => {
-        createAllCharts();
-    }, 100);
+function dragOverHandler(event) {
+    event.preventDefault();
 }
 
-function handleFileUpload(file) {
-    if (!file) {
-        console.error('No file provided');
-        return;
-    }
-    if (!file.name.match(/\.(xlsx|xls)$/i)) {
-        showUploadStatus('Formato de arquivo inválido. Use .xlsx ou .xls', 'error');
-        return;
-    }
-    showUploadStatus('Processando arquivo...', 'processing');
+function dragEnterHandler(event) {
+    event.preventDefault();
+    event.target.classList.add('dragover');
+}
+
+function dragLeaveHandler(event) {
+    event.target.classList.remove('dragover');
+}
+
+function processFile(file) {
+    if (!file) return;
+
+    const statusElement = document.getElementById('uploadStatus');
+    statusElement.className = 'upload-status processing';
+    statusElement.textContent = 'Processando arquivo...';
+    statusElement.classList.remove('hidden');
 
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
+
+            // Procurar pela planilha "Final" ou usar a primeira
+            let worksheet;
+            if (workbook.SheetNames.includes('Final')) {
+                worksheet = workbook.Sheets['Final'];
+            } else {
+                const firstSheetName = workbook.SheetNames[0];
+                worksheet = workbook.Sheets[firstSheetName];
+            }
+
+            // Converter para JSON
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
             if (jsonData.length === 0) {
-                showUploadStatus('Arquivo vazio ou sem dados válidos', 'error');
-                return;
+                throw new Error('Arquivo vazio ou formato inválido');
             }
 
-            console.log('Dados brutos carregados:', jsonData.length, 'registros');
-            console.log('Primeiro registro:', jsonData[0]);
+            // Processar os dados
+            globalData = processData(jsonData);
+            filteredData = [...globalData];
 
-            const processedData = processData(jsonData);
+            // Atualizar campos de data com o período dos dados
+            updateDateFilterPlaceholders();
+            applyDateFilters();
 
-            if (processedData.length === 0) {
-                showUploadStatus('Nenhum dado válido encontrado no arquivo', 'error');
-                return;
-            }
+            // Atualizar a interface
+            updateAllCharts();
+            updateAllMetrics();
+            updateKPIs();
 
-            globalData = processedData;
-            updateLastUploadInfo();
-            updateDateFilters();
-            updateDashboard();
+            statusElement.className = 'upload-status success';
+            statusElement.textContent = `Arquivo carregado com sucesso! ${globalData.length} registros processados.`;
 
-            showUploadStatus(`Arquivo processado com sucesso! ${processedData.length} registros carregados.`, 'success');
+            console.log('Dados carregados:', globalData.length, 'registros');
+
         } catch (error) {
-            console.error('Error processing file:', error);
-            showUploadStatus(`Erro ao processar arquivo: ${error.message}`, 'error');
+            console.error('Erro ao processar arquivo:', error);
+            statusElement.className = 'upload-status error';
+            statusElement.textContent = `Erro ao processar arquivo: ${error.message}`;
         }
     };
+
     reader.onerror = function() {
-        showUploadStatus('Erro ao ler arquivo', 'error');
+        statusElement.className = 'upload-status error';
+        statusElement.textContent = 'Erro ao ler o arquivo';
     };
 
     reader.readAsArrayBuffer(file);
 }
 
-function fetchAndLoadExcel(url) {
-    showUploadStatus('Carregando arquivo database automaticamente...', 'processing');
-
-    fetch(url)
+// FUNÇÃO PARA CARREGAR database.xlsx AUTOMATICAMENTE
+function loadDatabaseFile() {
+    fetch('./database.xlsx')
         .then(response => {
             if (!response.ok) {
-                throw new Error(`Erro ao carregar arquivo: ${response.statusText}`);
+                throw new Error('database.xlsx não encontrado');
             }
             return response.arrayBuffer();
         })
         .then(data => {
-            const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            const workbook = XLSX.read(data, { type: 'array' });
 
-            if (jsonData.length === 0) {
-                showUploadStatus('Arquivo database vazio ou sem dados válidos', 'error');
-                return;
+            // Procurar pela planilha "Final" ou usar a primeira
+            let worksheet;
+            if (workbook.SheetNames.includes('Final')) {
+                worksheet = workbook.Sheets['Final'];
+            } else {
+                const firstSheetName = workbook.SheetNames[0];
+                worksheet = workbook.Sheets[firstSheetName];
             }
 
-            globalData = processData(jsonData);
-            updateLastUploadInfo();
-            updateDateFilters();
-            updateDashboard();
+            // Converter para JSON
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-            showUploadStatus(`Arquivo database carregado com sucesso! ${globalData.length} registros.`, 'success');
+            if (jsonData.length > 0) {
+                // Processar os dados
+                globalData = processData(jsonData);
+                filteredData = [...globalData];
+
+                // Atualizar campos de data com o período dos dados
+                updateDateFilterPlaceholders();
+                applyDateFilters();
+
+                // Atualizar a interface
+                updateAllCharts();
+                updateAllMetrics();
+                updateKPIs();
+
+                console.log('database.xlsx carregado automaticamente:', globalData.length, 'registros');
+            } else {
+                throw new Error('database.xlsx está vazio');
+            }
         })
         .catch(error => {
-            console.error('Falha ao carregar database.xlsx:', error);
-            showUploadStatus('Falha ao carregar arquivo database automaticamente. Use o upload manual.', 'error');
+            console.log('database.xlsx não encontrado, usando dados de exemplo:', error.message);
+            // Usar dados de exemplo se o arquivo não for encontrado
+            globalData = processData(sampleData);
+            filteredData = [...globalData];
+
+            // Atualizar campos de data com o período dos dados de exemplo
+            updateDateFilterPlaceholders();
+            applyDateFilters();
+
+            updateAllCharts();
+            updateAllMetrics();
+            updateKPIs();
         });
 }
 
-function initializeApp() {
-    console.log('Inicializando app...');
-    if (typeof XLSX === 'undefined') {
-        showUploadStatus('Erro: Biblioteca XLSX não carregada', 'error');
-        console.error('XLSX library not loaded');
-        return;
+// FUNÇÃO PARA ATUALIZAR OS PLACEHOLDERS DOS FILTROS DE DATA - at 15/09
+function updateDateFilterPlaceholders() {
+    if (globalData.length === 0) return;
+    // Sempre fixa o start em 01/01/2024
+    const startDate = new Date(2024, 0, 1); // Janeiro é mês 0 em JS!
+    // Busca a maior data da base (garantia maior)
+    const endDate = globalData
+        .map(x => x.Data)
+        .filter(d => d instanceof Date && !isNaN(d))
+        .reduce((a, b) => (a > b ? a : b), new Date(2024, 0, 1));
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    if (startDateInput) {
+        startDateInput.placeholder = formatDateBR(startDate);
+        startDateInput.value = formatDateBR(startDate); // <-- valor inicial!
+        startDateInput.title = `Dados disponíveis a partir de ${formatDateBR(startDate)}`;
     }
-    if (typeof Chart === 'undefined') {
-        showUploadStatus('Erro: Biblioteca Chart.js não carregada', 'error');
-        console.error('Chart.js library not loaded');
-        return;
+    if (endDateInput) {
+        endDateInput.placeholder = formatDateBR(endDate);
+        endDateInput.value = formatDateBR(endDate); // <-- valor inicial!
+        endDateInput.title = `Dados disponíveis até ${formatDateBR(endDate)}`;
     }
-    // Inicia com dados de exemplo
-    console.log('Carregando dados de exemplo...');
-    globalData = processData(sampleData);
-    updateDateFilters();
-    updateDashboard();
-
-    // Tenta carregar arquivo database.xlsx automaticamente
-    fetchAndLoadExcel('database.xlsx');
 }
 
-function setupEventListeners() {
-    console.log('Configurando event listeners...');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const fileInput = document.getElementById('fileInput');
-    const uploadZone = document.getElementById('uploadZone');
+// --- Funções de Criação de Gráficos COM DOIS EIXOS ---
+function createLineChart(chartId, seriesData) {
+    const ctx = document.getElementById(chartId);
+    if (!ctx) return;
+
+    // Destruir gráfico existente se houver
+    if (charts[chartId]) {
+        charts[chartId].destroy();
+    }
+
+    // Verificar se há séries com eixo secundário
+    const hasSecondaryAxis = seriesData.some(series => series.yAxisID === 'y1');
+
+    // Preparar datasets
+    const datasets = seriesData.map(series => ({
+        label: series.label,
+        data: filteredData.map(row => ({
+            x: formatDateBR(row.Data),
+            y: row[series.field]
+        })),
+        borderColor: series.color,
+        backgroundColor: series.color + '20',
+        tension: 0.4,
+        fill: false,
+        yAxisID: series.yAxisID || 'y'
+    }));
+
+    // Configuração das escalas
+    const scales = {
+        x: {
+            type: 'category',
+            title: {
+                display: false,
+                text: 'Data'
+            }
+        },
+        y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+                display: false,
+                text: 'Valor'
+            }
+        }
+    };
+
+    // Adicionar eixo secundário se necessário
+    if (hasSecondaryAxis) {
+        scales.y1 = {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+                display: false,
+                text: 'Valor (Eixo 2)'
+            },
+            grid: {
+                drawOnChartArea: false,
+            },
+        };
+    }
+
+    // Criar novo gráfico
+    charts[chartId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,  // LEGENDA HABILITADA
+                    position: 'top',
+                },
+                title: {
+                    display: false
+                }
+            },
+            scales: scales
+        }
+    });
+}
+
+function updateAllCharts() {
+    if (filteredData.length === 0) return;
+
+    Object.keys(chartSeriesConfig).forEach(chartType => {
+        const chartId = getChartId(chartType);
+        const seriesConfig = chartSeriesConfig[chartType];
+        createLineChart(chartId, seriesConfig);
+    });
+}
+
+function getChartId(chartType) {
+    const chartIdMap = {
+        'celulose': 'celuloseChart',
+        'tio2': 'tio2Chart',
+        'insumos': 'insumosChart',
+        'resinas': 'resinasChart',
+        'moedas': 'moedasChart',
+        'freteimport': 'freteImportChart',
+        'freteexport': 'freteExportChart'
+    };
+    return chartIdMap[chartType] || chartType + 'Chart';
+}
+
+function updateAllMetrics() {
+    Object.keys(chartSeriesConfig).forEach(chartType => {
+        updateChartMetrics(chartType);
+    });
+}
+
+// --- Funções de KPI CORRIGIDAS ---
+function updateKPIs() {
+    if (filteredData.length === 0) return;
+
+    const lastRow = filteredData[filteredData.length - 1];
+
+    // Celulose KPI
+    updateKPIBox('celuloseKPI', [
+        { label: 'EUR', value: lastRow.Celulose_EUR },
+        { label: 'USD', value: lastRow.Celulose_USD }
+    ]);
+
+    // TiO2 KPI
+    updateKPIBox('tio2KPI', [
+        { label: 'TIO2', value: lastRow.TIO2_EUR }
+    ]);
+
+    // Resinas KPI
+    updateKPIBox('resinasKPI', [
+        { label: 'UF', value: lastRow.Resina_UF_BRL },
+        { label: 'MF', value: lastRow.Resina_MF_BRL }
+    ]);
+
+    // Frete Importação KPI (CORRIGIDO)
+    updateKPIBox('freteImportKPI', [
+        { label: 'EU', value: lastRow.CNT_EU_EUR || 0 },
+        { label: 'CN', value: lastRow.CNT_CN_USD || 0 }
+    ]);
+
+    // Frete Exportação KPI (CORRIGIDO)
+    const freteExportValue = ((lastRow.CNT_GQ_USD || 0) + (lastRow.CNT_CG_USD || 0) + (lastRow.CNT_VC_USD || 0)) / 3;
+    updateKPIBox('freteExportKPI', [
+        { label: 'CG', value: lastRow.CNT_CG_USD },
+        { label: 'GQ', value: lastRow.CNT_GQ_USD || 0 }
+    ]);
+}
+
+function updateKPIBox(kpiId, values) {
+    const kpiElement = document.getElementById(kpiId);
+    if (!kpiElement) return;
+
+    let html = '';
+    values.forEach(item => {
+        html += `
+            <div class="kpi-item">
+                <span class="currency">${item.label}</span>
+                <span class="value">${formatNumber(item.value)}</span>
+            </div>
+        `;
+    });
+
+    kpiElement.innerHTML = html;
+}
+
+// --- Funções de Filtro por Data ---
+function setupDateFilters() {
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
 
-    if (uploadBtn && fileInput) {
-        uploadBtn.onclick = e => {
-            e.preventDefault();
-            fileInput.click();
-        };
-        fileInput.onchange = e => {
-            if (e.target.files.length > 0) {
-                handleFileUpload(e.target.files[0]);
-                e.target.value = '';
-            }
-        };
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', applyDateFilters);
+        endDateInput.addEventListener('change', applyDateFilters);
     }
-
-    if (uploadZone && fileInput) {
-        uploadZone.onclick = e => {
-            e.preventDefault();
-            fileInput.click();
-        };
-        uploadZone.ondragover = e => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        };
-        uploadZone.ondragleave = e => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-        };
-        uploadZone.ondrop = e => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
-                handleFileUpload(e.dataTransfer.files[0]);
-            }
-        };
-    }
-
-    document.ondragover = e => e.preventDefault();
-    document.ondrop = e => e.preventDefault();
-
-    function setupDateInputHandlers(input) {
-        if (!input) return;
-        input.oninput = e => {
-            if (!validateDateInput(e.target.value)) {
-                e.target.style.borderColor = '#c0152f';
-            } else {
-                e.target.style.borderColor = '';
-            }
-        };
-        input.onblur = e => {
-            const date = parseDateBR(e.target.value);
-            if (date) {
-                e.target.value = formatDateBR(date);
-                e.target.style.borderColor = '';
-                updateDashboard();
-            } else {
-                e.target.style.borderColor = '#c0152f';
-            }
-        };
-        input.onkeypress = e => {
-            if (e.key === 'Enter') e.target.blur();
-        };
-    }
-
-    setupDateInputHandlers(startDateInput);
-    setupDateInputHandlers(endDateInput);
-
-    console.log('Event listeners configurados.');
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        initializeApp();
-        setupEventListeners();
-    });
-} else {
-    initializeApp();
-    setupEventListeners();
+function applyDateFilters() {
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+
+    if (!startDateInput || !endDateInput) return;
+
+    const startDateStr = startDateInput.value.trim();
+    const endDateStr = endDateInput.value.trim();
+
+    let startDate = null;
+    let endDate = null;
+
+    if (startDateStr && validateDateInput(startDateStr)) {
+        startDate = parseDateBR(startDateStr);
+    }
+
+    if (endDateStr && validateDateInput(endDateStr)) {
+        endDate = parseDateBR(endDateStr);
+    }
+
+    // Aplicar filtro
+    if (startDate || endDate) {
+        filteredData = filterDataByDate(globalData, startDate, endDate);
+    } else {
+        filteredData = [...globalData];
+    }
+
+    // Atualizar interface
+    updateAllCharts();
+    updateAllMetrics();
+    updateKPIs();
+
+    console.log('Filtro aplicado:', filteredData.length, 'registros');
 }
+
+// --- Inicialização ---
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard inicializado');
+
+    // Configurar filtros de data
+    setupDateFilters();
+
+    // Tentar carregar database.xlsx primeiro, depois dados de exemplo
+    loadDatabaseFile();
+
+    console.log('Dashboard pronto');
+});
+
+// --- Exposição de funções globais para o HTML ---
+window.handleFileSelect = handleFileSelect;
+window.dropHandler = dropHandler;
+window.dragOverHandler = dragOverHandler;
+window.dragEnterHandler = dragEnterHandler;
+window.dragLeaveHandler = dragLeaveHandler;
