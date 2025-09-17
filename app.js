@@ -516,7 +516,9 @@ function createLineChart(chartId, seriesData) {
     const hasSecondaryAxis = seriesData.some(series => series.yAxisID === 'y1');
 
     // Preparar datasets
-    const datasets = seriesData.map(series => ({
+    const datasets = seriesData.map(series => {
+    // Cria o objeto normalmente
+    const dataset = {
         label: series.label,
         data: filteredData.map(row => ({
             x: formatDateBR(row.Data),
@@ -527,7 +529,16 @@ function createLineChart(chartId, seriesData) {
         tension: 0.4,
         fill: false,
         yAxisID: series.yAxisID || 'y'
-    }));
+    };
+
+    // Se for o campo USDBRL_GPC, coloca linha pontilhada:
+    if (series.field === 'USDBRL_GPC') {
+        dataset.borderDash = [5, 5]; // [tamanho do traço, tamanho do espaço] em pixels
+    }
+
+    return dataset;
+});
+
 
     // Configuração das escalas
 // ---------------------------------------------------------
