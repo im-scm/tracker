@@ -66,7 +66,7 @@ const chartSeriesConfig = {
         { field: 'Celulose_EUR', label: 'EUR', color: '#6B8E23', yAxisID: 'y1' }  // Eixo secundário
     ],
     'tio2': [
-        { field: 'TIO2_EUR', label: 'TIO2-', color: '#4A148C', yAxisID: 'y' }
+        { field: 'TIO2_EUR', label: 'TIO2_EUR-', color: '#4A148C', yAxisID: 'y' }
     ],
     'insumos': [
         { field: 'Ureia_USD', label: 'URE', color: '#6B8E23', yAxisID: 'y' },      // Eixo primário
@@ -653,7 +653,7 @@ function updateKPIs() {
 
     // TiO2 KPI
     updateKPIBox('tio2KPI', [
-        { label: 'TIO2K', value: lastRow.TIO2_EUR }
+        { label: 'EUR', value: lastRow.TIO2_EUR }
     ]);
 
     // Resinas KPI
