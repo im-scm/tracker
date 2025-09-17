@@ -63,7 +63,7 @@ const chartColors = {
 const chartSeriesConfig = {
     'celulose': [
         { field: 'Celulose_USD', label: 'USD', color: '#CD853F', yAxisID: 'y' },  // Eixo primário
-        { field: 'Celulose_EUR', label: 'EUR', color: '#B34A3A', yAxisID: 'y1' }  // Eixo secundário
+        { field: 'Celulose_EUR', label: 'EUR', color: '#6B8E23', yAxisID: 'y1' }  // Eixo secundário
     ],
     'tio2': [
         { field: 'TIO2_EUR', label: 'TIO2', color: '#4A148C', yAxisID: 'y' }
@@ -71,26 +71,26 @@ const chartSeriesConfig = {
     'insumos': [
         { field: 'Ureia_USD', label: 'URE', color: '#6B8E23', yAxisID: 'y' },      // Eixo primário
         { field: 'Metanol_USD', label: 'MET', color: '#708090', yAxisID: 'y' },    // Eixo primário
-        { field: 'Melamina_USD', label: 'MEL', color: '#8B4513', yAxisID: 'y1' }   // Eixo secundário
+        { field: 'Melamina_USD', label: 'MEL', color: '#CD853F', yAxisID: 'y1' }   // Eixo secundário
     ],
     'resinas': [
-        { field: 'Resina_UF_BRL', label: 'UF', color: '#B34A3A', yAxisID: 'y' },   // Eixo primário
-        { field: 'Resina_MF_BRL', label: 'MF', color: '#8B4513', yAxisID: 'y' },   // Eixo primário
-        { field: 'USDBRL_GPC', label: 'USD', color: '#4A148C', yAxisID: 'y1' }     // Eixo secundário
+        { field: 'Resina_UF_BRL', label: 'UF', color: '#6B8E23', yAxisID: 'y' },   // Eixo primário
+        { field: 'Resina_MF_BRL', label: 'MF', color: '#CD853F', yAxisID: 'y' },   // Eixo primário
+        { field: 'USDBRL_GPC', label: 'USD', color: '#708090', yAxisID: 'y1' }     // Eixo secundário
     ],
     'moedas': [
-        { field: 'USDBRL', label: 'USD', color: '#708090', yAxisID: 'y' },         // Eixo primário
-        { field: 'EURBRL', label: 'EUR', color: '#B34A3A', yAxisID: 'y' },         // Eixo primário
+        { field: 'USDBRL', label: 'USD', color: '#6B8E23', yAxisID: 'y' },         // Eixo primário
+        { field: 'EURBRL', label: 'EUR', color: '#708090', yAxisID: 'y' },         // Eixo primário
         { field: 'CNYBRL', label: 'CNY', color: '#CD853F', yAxisID: 'y1' }         // Eixo secundário
     ],
     'freteimport': [
-        { field: 'CNT_EU_EUR', label: 'EU', color: '#4A148C', yAxisID: 'y' },   // Eixo primário
-        { field: 'CNT_CN_USD', label: 'CN', color: '#8B4513', yAxisID: 'y1' }    // Eixo secundário
+        { field: 'CNT_EU_EUR', label: 'EU', color: '#6B8E23', yAxisID: 'y' },   // Eixo primário
+        { field: 'CNT_CN_USD', label: 'CN', color: '#CD853F', yAxisID: 'y1' }    // Eixo secundário
     ],
     'freteexport': [
         { field: 'CNT_GQ_USD', label: 'GQ', color: '#6B8E23', yAxisID: 'y' },
         { field: 'CNT_CG_USD', label: 'CG', color: '#8B4513', yAxisID: 'y' },
-        { field: 'CNT_VC_USD', label: 'VC', color: '#B34A3A', yAxisID: 'y' }
+        { field: 'CNT_VC_USD', label: 'VC', color: '#CD853F', yAxisID: 'y' }
     ]
 };
 
