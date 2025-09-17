@@ -530,40 +530,52 @@ function createLineChart(chartId, seriesData) {
     }));
 
     // Configuração das escalas
-    const scales = {
-        x: {
-            type: 'category',
-            title: {
-                display: false,
-                text: 'Data'
-            }
+// ---------------------------------------------------------
+// Pegue as cores das linhas relacionadas a cada eixo:
+const yMainColor = seriesData.find(s => s.yAxisID === 'y')?.color || '#708090'; // ou cor padrão
+const y1MainColor = seriesData.find(s => s.yAxisID === 'y1')?.color || '#CD853F'; // ou cor padrão
+// ---------------------------------------------------------
+
+// Configuração das escalas
+const scales = {
+    x: {
+        type: 'category',
+        title: {
+            display: false,
+            text: 'Data'
+        }
+    },
+    y: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        title: {
+            display: false,
+            text: 'Valor'
         },
-        y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: {
-                display: false,
-                text: 'Valor'
-            }
+        ticks: {
+            color: yMainColor         // <-- É aqui que a cor da fonte muda!
+        }
+    }
+};
+// Adicionar eixo secundário se necessário
+if (hasSecondaryAxis) {
+    scales.y1 = {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        title: {
+            display: false,
+            text: 'Valor (Eixo 2)'
+        },
+        grid: {
+            drawOnChartArea: false,
+        },
+        ticks: {
+            color: y1MainColor        // <-- Cor do eixo 2!
         }
     };
-
-    // Adicionar eixo secundário se necessário
-    if (hasSecondaryAxis) {
-        scales.y1 = {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: {
-                display: false,
-                text: 'Valor (Eixo 2)'
-            },
-            grid: {
-                drawOnChartArea: false,
-            },
-        };
-    }
+}
 
     // Criar novo gráfico
     charts[chartId] = new Chart(ctx, {
